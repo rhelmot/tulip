@@ -304,9 +304,6 @@ def downloadFile():
         )
 
 
+db.open()
 if __name__ == "__main__":
-    try:
-        db.open()
-        application.run(host="0.0.0.0", threaded=True)
-    finally:
-        db.close()
+    application.run(host=os.getenv("API_HOST", "0.0.0.0"), threaded=True)
