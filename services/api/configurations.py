@@ -24,6 +24,8 @@
 
 import os
 from pathlib import Path
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 traffic_dir = Path(os.getenv("TULIP_TRAFFIC_DIR", "/traffic"))
 dump_pcaps_dir = Path(os.getenv("DUMP_PCAPS", "/traffic"))
@@ -32,19 +34,23 @@ flag_lifetime = os.getenv("FLAG_LIFETIME", 5)
 start_date = os.getenv("TICK_START", "2018-06-27T13:00:00+02:00")
 flag_regex = os.getenv("FLAG_REGEX", "[A-Z0-9]{31}=")
 vm_ip = os.getenv("VM_IP", "10.10.3.1")
-visualizer_url = os.getenv("VISUALIZER_URL", "http://127.0.0.1:1337")
+visualizer_url = os.getenv("VISUALIZER_URL", "")
+services_file = Path(os.getenv("SERVICES_FILE", "/services.txt"))
+services = []
 
-vm_ip_1 = "10.60.2.1"
-helper = '''
-10.61.5.1:1237 CyberUni 4
-10.61.5.1:1236 CyberUni 3
-10.61.5.1:1235 CyberUni 1
-10.61.5.1:1234 CyberUni 2
-10.60.5.1:3003 ClosedSea 1
-10.60.5.1:3004 ClosedSea 2
-10.62.5.1:5000 Trademark
-10.63.5.1:1337 RPN
-'''
+def reload_services():
+    global services
+    helper = open(services_file).read()
+    tmp = [{"ip": x.split(" ")[0].split(":")[0], "port": int(x.split(" ")[0].split(":")[1]), "name": " ".join(x.split(" ")[1:])} for x in helper.strip().split("\n")]
+    tmp += [{"ip": vm_ip, "port": -1, "name": "other"}]
+    services = tmp
 
-services = [{"ip": x.split(" ")[0].split(":")[0], "port": int(x.split(" ")[0].split(":")[1]), "name": " ".join(x.split(" ")[1:])} for x in helper.strip().split("\n")]
-services += [{"ip": vm_ip_1, "port": -1, "name": "other"}]
+reload_services()
+
+class Handler(FileSystemEventHandler):
+    def on_modified(self, event):
+        reload_services()
+
+observer = Observer()
+observer.schedule(Handler(), services_file)
+observer.start()

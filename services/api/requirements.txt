@@ -3,3 +3,4 @@ Flask
 requests
 python-dateutil
 psycopg[binary,pool]
+watchdog

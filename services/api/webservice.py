@@ -33,7 +33,6 @@ import dateutil.parser
 from ipaddress import ip_network
 
 from configurations import (
-    services,
     traffic_dir,
     start_date,
     tick_length,
@@ -42,6 +41,7 @@ from configurations import (
     flag_regex,
     dump_pcaps_dir,
 )
+import configurations as conf
 from pathlib import Path
 from data2req import convert_flow_to_http_requests, convert_single_http_requests
 from flask_cors import CORS
@@ -137,6 +137,9 @@ def getStats():
 
 @application.route("/under_attack")
 def getUnderAttack():
+    if not visualizer_url:
+        return return_json_response({})
+
     res = get(
         f"{visualizer_url}/api/under-attack",
         params={
@@ -169,7 +172,7 @@ def setStar():
 
 @application.route("/services")
 def getServices():
-    return return_json_response(services)
+    return return_json_response(conf.services)
 
 
 @application.route("/flag_regex")
